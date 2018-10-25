@@ -10,6 +10,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.timeout.IdleStateHandler;
 
 public class HttpServer {
     private int port;
@@ -45,10 +46,12 @@ public class HttpServer {
                                 throws Exception {
                             System.out.println("initChannel ch:" + ch);
                             ch.pipeline()
+                                    .addLast(new IdleStateHandler(5, 10, 0))
                                     .addLast("decoder", new StringDecoder())   // 1
                                     .addLast("encoder", new StringEncoder())  // 2
                                     .addLast("aggregator", new HttpObjectAggregator(512 * 1024))    // 3
-                                    .addLast("handler", new HttpHandler());        // 4
+                                    .addLast("handler", new HttpHandler());// 4
+
                         }
                     })
                     /**

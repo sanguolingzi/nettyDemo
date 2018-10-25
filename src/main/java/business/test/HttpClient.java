@@ -13,9 +13,11 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 
 import java.net.InetSocketAddress;
+import java.time.LocalDateTime;
 import java.util.Scanner;
 
 public class HttpClient {
@@ -50,18 +52,42 @@ public class HttpClient {
                                      ChannelPipeline pipeline = ch.pipeline();
                                      //pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                                      //pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
+                                     pipeline.addLast(new IdleStateHandler(5, 10, 0));
                                      pipeline.addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
                                      pipeline.addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
                                      pipeline.addLast("handler", new HttpClientHandler());
+
                                                      }
                              });
                          System.out.println("created..");
 
                          ChannelFuture cf = b.connect().sync(); // 异步连接服务器
-                         System.out.println("connected..."); // 连接完成
+                         //System.out.println("connected..."); // 连接完成
 
 
 
+                         new Thread(new Runnable() {
+                             @Override
+                             public void run() {
+                                while(true){
+
+                                    try{
+                                        if(cf.channel().isActive()){
+                                            cf.channel().writeAndFlush(Thread.currentThread().getName()+"客户端发送内容:"+ LocalDateTime.now());
+                                        }else{
+                                            System.out.println("......break...........");
+                                            break;
+                                        }
+                                        System.out.println(Thread.currentThread().getName()+"客户端发送线程休眠 : start");
+                                        Thread.currentThread().sleep(7000);
+                                        //break;
+                                    }catch (Exception e){
+                                    }
+                                }
+                             }
+                         }).start();
+
+                         /*
                          System.out.println("输入信息...");
                          java.util.Scanner scanner = new java.util.Scanner(System.in);
 
@@ -75,11 +101,15 @@ public class HttpClient {
                              str = scanner.next();
                          }
                          cf.channel().writeAndFlush(str);
+                         */
 
                          cf.channel().closeFuture().sync(); // 异步等待关闭连接channel
                          System.out.println("closed.."); // 关闭完成
                      } finally {
                          group.shutdownGracefully().sync(); // 释放线程池资源
+                         System.out.print("准备重连!");
+                         start();
+                         System.out.print("重连完毕!");
                      }
              }
 
