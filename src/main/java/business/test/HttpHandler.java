@@ -1,5 +1,7 @@
 package business.test;
 
+import business.test.kryoProtocal.KryoUtil;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
@@ -59,7 +61,6 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
                 heartBeat.put(ctx.channel().id().toString(),++count);
             }
         }
-
         super.userEventTriggered(ctx, evt);
 
 
@@ -91,9 +92,11 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        System.out.println("server 收到消息！:"+msg.toString());
-        ctx.channel().writeAndFlush("你好客户端 这是服务端发送的消息："+LocalDateTime.now());
 
+        System.out.println("----"+msg.getClass().getSimpleName());
+        System.out.println("server 收到消息！:"+KryoUtil.parseSerializable((byte[])msg));
+        ctx.channel().writeAndFlush("你好客户端 这是服务端发送的消息："+KryoUtil.doSerializable(LocalDateTime.now()));
+        heartBeat.put(ctx.channel().id().asLongText(),0);
         //System.out.println("输入回复...");
         //java.util.Scanner scanner = new java.util.Scanner(System.in);
         //ctx.channel().writeAndFlush(scanner.next());
@@ -112,7 +115,13 @@ public class HttpHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         System.out.println("exceptionCaught");
-        if(null != cause) cause.printStackTrace();
-        if(null != ctx) ctx.close();
+        if(null != cause){
+            cause.printStackTrace();
+        }
+        if(null != ctx){
+            String channelId = ctx.channel().id().asLongText();
+            heartBeat.remove(channelId);
+            ctx.close();
+        }
     }
 }

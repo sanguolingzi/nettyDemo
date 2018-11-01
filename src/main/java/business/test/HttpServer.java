@@ -7,6 +7,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
@@ -47,8 +49,10 @@ public class HttpServer {
                             System.out.println("initChannel ch:" + ch);
                             ch.pipeline()
                                     .addLast(new IdleStateHandler(5, 10, 0))
-                                    .addLast("decoder", new StringDecoder())   // 1
-                                    .addLast("encoder", new StringEncoder())  // 2
+                                    //.addLast("decoder", new StringDecoder())   // 1
+                                    //.addLast("encoder", new StringEncoder())  // 2
+                                    .addLast("decoder",new ByteArrayDecoder())
+                                    .addLast("encoder",new ByteArrayEncoder())
                                     .addLast("aggregator", new HttpObjectAggregator(512 * 1024))    // 3
                                     .addLast("handler", new HttpHandler());// 4
 
@@ -69,6 +73,7 @@ public class HttpServer {
                 System.out.println("netty start success");
             }
 
+            cf.channel().close();
             /**
              * 这里一直等待直到连接被关闭
              */

@@ -1,5 +1,6 @@
 package business.test;
 
+import business.test.kryoProtocal.KryoUtil;
 import io.netty.bootstrap.Bootstrap;
 
 import io.netty.channel.ChannelInitializer;
@@ -11,13 +12,18 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.CharsetUtil;
 
 import java.net.InetSocketAddress;
+import java.security.SecureRandom;
+import java.security.Security;
 import java.time.LocalDateTime;
+import java.util.Random;
 import java.util.Scanner;
 
 public class HttpClient {
@@ -53,8 +59,14 @@ public class HttpClient {
                                      //pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4));
                                      //pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
                                      pipeline.addLast(new IdleStateHandler(5, 10, 0));
-                                     pipeline.addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
-                                     pipeline.addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
+                                     //pipeline.addLast("decoder", new StringDecoder(CharsetUtil.UTF_8));
+                                     //pipeline.addLast("encoder", new StringEncoder(CharsetUtil.UTF_8));
+
+
+
+                                     pipeline.addLast("decoder",new ByteArrayDecoder());
+                                     pipeline.addLast("encoder",new ByteArrayEncoder());
+
                                      pipeline.addLast("handler", new HttpClientHandler());
 
                                                      }
@@ -73,7 +85,9 @@ public class HttpClient {
 
                                     try{
                                         if(cf.channel().isActive()){
-                                            cf.channel().writeAndFlush(Thread.currentThread().getName()+"客户端发送内容:"+ LocalDateTime.now());
+                                            //cf.channel().writeAndFlush(Thread.currentThread().getName()+"客户端发送内容:"+ LocalDateTime.now());
+                                            cf.channel().writeAndFlush(KryoUtil.doSerializable(Thread.currentThread().getName()+"客户端发送内容:"+ LocalDateTime.now()));
+                                            //cf.channel().writeAndFlush(new byte[1024]);
                                         }else{
                                             System.out.println("......break...........");
                                             break;
@@ -82,6 +96,7 @@ public class HttpClient {
                                         Thread.currentThread().sleep(7000);
                                         //break;
                                     }catch (Exception e){
+                                        e.printStackTrace();
                                     }
                                 }
                              }
@@ -107,13 +122,13 @@ public class HttpClient {
                          System.out.println("closed.."); // 关闭完成
                      } finally {
                          group.shutdownGracefully().sync(); // 释放线程池资源
-                         System.out.print("准备重连!");
-                         start();
-                         System.out.print("重连完毕!");
+                         //System.out.print("准备重连!");
+                         //start();
+                         //System.out.print("重连完毕!");
                      }
              }
 
              public static void main(String[] args) throws Exception {
-                 new HttpClient("127.0.0.1", 8088).start(); // 连接127.0.0.1/65535，并启动
+                 new HttpClient("localhost", 8081).start(); // 连接127.0.0.1/65535，并启动
              }
 }

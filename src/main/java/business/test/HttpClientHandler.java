@@ -1,6 +1,6 @@
 package business.test;
 
-import io.netty.channel.ChannelFutureListener;
+import business.test.kryoProtocal.KryoUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
@@ -19,7 +19,7 @@ public class HttpClientHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         System.out.println("client channelRead..");
 
-        System.out.println("msg:"+msg.toString());
+        System.out.println("msg:"+ KryoUtil.parseSerializable((byte[])msg));
 
     }
 
